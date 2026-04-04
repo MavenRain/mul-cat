@@ -1,0 +1,21 @@
+[package]
+name = "mul-cat"
+version = "0.1.0"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+description = "Multiplier built on comp-cat-rs and RHDL: Booth encoding and carry-save tree reduction as free category morphisms"
+repository = "https://github.com/MavenRain/mul-cat"
+keywords = ["category-theory", "hardware", "multiplier", "booth", "rhdl"]
+categories = ["mathematics", "hardware-support"]
+
+[dependencies]
+comp-cat-rs = "0.5"
+rhdl-bits = { git = "https://github.com/samitbasu/rhdl" }
+
+[dev-dependencies]
+proptest = "1"
+
+[lints.clippy]
+all = { level = "deny" }
+pedantic = { level = "deny" }
+nursery = { level = "deny" }
