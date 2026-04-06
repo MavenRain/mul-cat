@@ -8,7 +8,7 @@
 
 use crate::bits_ext::{mask, to_u128};
 use crate::booth::digit::BoothDigit;
-use rhdl_bits::{BitWidth, Bits, W};
+use hdl_cat_bits::Bits;
 
 /// Compute the sign-extended partial product for a single Booth digit.
 ///
@@ -17,10 +17,7 @@ use rhdl_bits::{BitWidth, Bits, W};
 /// This does not include the weight shift for the digit index; see
 /// [`shifted_partial_product`].
 #[must_use]
-pub fn partial_product<const N: usize>(multiplicand: Bits<N>, digit: BoothDigit) -> u128
-where
-    W<N>: BitWidth,
-{
+pub fn partial_product<const N: usize>(multiplicand: Bits<N>, digit: BoothDigit) -> u128 {
     let m = mask(2 * N);
     let a = to_u128(multiplicand);
     match digit {
@@ -42,10 +39,7 @@ pub fn shifted_partial_product<const N: usize>(
     multiplicand: Bits<N>,
     digit: BoothDigit,
     digit_index: usize,
-) -> u128
-where
-    W<N>: BitWidth,
-{
+) -> u128 {
     let m = mask(2 * N);
     (partial_product(multiplicand, digit) << (2 * digit_index)) & m
 }
@@ -58,10 +52,10 @@ where
 /// ```
 /// use mul_cat::booth::digit::encode_all;
 /// use mul_cat::booth::partial_product::all_shifted_partial_products;
-/// use rhdl_bits::bits;
+/// use hdl_cat_bits::Bits;
 ///
-/// let a = bits::<17>(12345);
-/// let b = bits::<17>(6789);
+/// let a = Bits::<17>::new_wrapping(12345);
+/// let b = Bits::<17>::new_wrapping(6789);
 /// let digits = encode_all(b);
 /// let partials = all_shifted_partial_products(a, &digits);
 /// let mask: u128 = (1_u128 << 34) - 1;
@@ -72,10 +66,7 @@ where
 pub fn all_shifted_partial_products<const N: usize>(
     multiplicand: Bits<N>,
     digits: &[BoothDigit],
-) -> Vec<u128>
-where
-    W<N>: BitWidth,
-{
+) -> Vec<u128> {
     digits
         .iter()
         .enumerate()
@@ -88,36 +79,35 @@ mod tests {
     use super::*;
     use crate::booth::digit::encode_all;
     use proptest::prelude::*;
-    use rhdl_bits::bits;
 
     #[test]
     fn zero_digit_produces_zero_partial() {
-        let a = bits::<17>(12345);
+        let a = Bits::<17>::new_wrapping(12345);
         assert_eq!(partial_product(a, BoothDigit::Zero), 0);
     }
 
     #[test]
     fn plus_one_returns_multiplicand() {
-        let a = bits::<17>(12345);
+        let a = Bits::<17>::new_wrapping(12345);
         assert_eq!(partial_product(a, BoothDigit::PlusOne), 12345);
     }
 
     #[test]
     fn plus_two_returns_doubled_multiplicand() {
-        let a = bits::<17>(12345);
+        let a = Bits::<17>::new_wrapping(12345);
         assert_eq!(partial_product(a, BoothDigit::PlusTwo), 24690);
     }
 
     #[test]
     fn minus_one_returns_twos_complement() {
-        let a = bits::<17>(1);
+        let a = Bits::<17>::new_wrapping(1);
         let mask: u128 = (1_u128 << 34) - 1;
         assert_eq!(partial_product(a, BoothDigit::MinusOne), mask);
     }
 
     #[test]
     fn minus_two_returns_twos_complement_doubled() {
-        let a = bits::<17>(1);
+        let a = Bits::<17>::new_wrapping(1);
         let expected = ((1_u128 << 34) - 2) & ((1_u128 << 34) - 1);
         assert_eq!(partial_product(a, BoothDigit::MinusTwo), expected);
     }
@@ -128,8 +118,8 @@ mod tests {
             a in 0_u128..(1 << 17),
             b in 0_u128..(1 << 17),
         ) {
-            let aa = bits::<17>(a);
-            let bb = bits::<17>(b);
+            let aa = Bits::<17>::new_wrapping(a);
+            let bb = Bits::<17>::new_wrapping(b);
             let digits = encode_all(bb);
             let partials = all_shifted_partial_products(aa, &digits);
             let m: u128 = (1_u128 << 34) - 1;

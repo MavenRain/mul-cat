@@ -8,6 +8,9 @@ pub enum Error {
     /// Graph construction or traversal error from comp-cat-rs.
     Graph(FreeCategoryError),
 
+    /// Error from the hdl-cat workspace (IR, circuit, sim, verilog).
+    HdlCat(hdl_cat_error::Error),
+
     /// Topology level index out of bounds.
     LevelOutOfBounds {
         /// The requested level.
@@ -78,10 +81,17 @@ impl From<FreeCategoryError> for Error {
     }
 }
 
+impl From<hdl_cat_error::Error> for Error {
+    fn from(e: hdl_cat_error::Error) -> Self {
+        Self::HdlCat(e)
+    }
+}
+
 impl core::fmt::Display for Error {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             Self::Graph(e) => write!(f, "graph error: {e}"),
+            Self::HdlCat(e) => write!(f, "hdl-cat error: {e}"),
             Self::LevelOutOfBounds { level, count } => {
                 write!(f, "level {level} out of bounds (count: {count})")
             }
@@ -125,6 +135,7 @@ impl std::error::Error for Error {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
             Self::Graph(e) => Some(e),
+            Self::HdlCat(e) => Some(e),
             Self::LevelOutOfBounds { .. }
             | Self::TermIndexOutOfRange { .. }
             | Self::GroupingMismatch { .. }

@@ -1,13 +1,13 @@
-//! Conversion helpers between [`rhdl_bits::Bits`] and `u128`.
+//! Conversion helpers between [`hdl_cat_bits::Bits`] and `u128`.
 //!
 //! All internal arithmetic in this crate is carried out in `u128`
 //! for simplicity, with conversions confined to the boundary.  The
-//! underlying representation of [`Bits<N>`](rhdl_bits::Bits) is a
+//! underlying representation of [`Bits<N>`](hdl_cat_bits::Bits) is a
 //! `u128`, so these helpers are essentially zero-cost wrappers over
-//! [`Bits::raw`](rhdl_bits::Bits::raw) and
-//! [`bits_masked`].
+//! [`Bits::to_u128`](hdl_cat_bits::Bits::to_u128) and
+//! [`Bits::new_wrapping`](hdl_cat_bits::Bits::new_wrapping).
 
-use rhdl_bits::{BitWidth, Bits, W, bits_masked};
+use hdl_cat_bits::Bits;
 
 /// The `u128` mask for an `N`-bit value.
 ///
@@ -27,40 +27,33 @@ pub const fn mask(n: usize) -> u128 {
 ///
 /// ```
 /// use mul_cat::bits_ext::to_u128;
-/// use rhdl_bits::bits;
+/// use hdl_cat_bits::Bits;
 ///
-/// assert_eq!(to_u128(bits::<8>(0xAB)), 0xAB);
+/// assert_eq!(to_u128(Bits::<8>::new_wrapping(0xAB)), 0xAB);
 /// ```
 #[must_use]
-pub const fn to_u128<const N: usize>(b: Bits<N>) -> u128
-where
-    W<N>: BitWidth,
-{
-    b.raw()
+pub const fn to_u128<const N: usize>(b: Bits<N>) -> u128 {
+    b.to_u128()
 }
 
 /// Construct a [`Bits<N>`] from a `u128`, masking excess bits.
 ///
-/// Unlike [`Bits::<N>::from`](rhdl_bits::Bits), this function will
-/// not panic when the input exceeds the `N`-bit mask; it masks the
-/// value first.
+/// Unlike [`Bits::<N>::try_new`](hdl_cat_bits::Bits::try_new), this
+/// function will not fail when the input exceeds the `N`-bit mask;
+/// it masks the value first.
 ///
 /// # Examples
 ///
 /// ```
 /// use mul_cat::bits_ext::from_u128;
 /// use mul_cat::bits_ext::to_u128;
-/// use rhdl_bits::Bits;
+/// use hdl_cat_bits::Bits;
 ///
 /// let b: Bits<8> = from_u128(0x1AB);
 /// assert_eq!(to_u128(b), 0xAB);
 /// ```
-#[must_use]
-pub const fn from_u128<const N: usize>(value: u128) -> Bits<N>
-where
-    W<N>: BitWidth,
-{
-    bits_masked::<N>(value)
+pub const fn from_u128<const N: usize>(value: u128) -> Bits<N> {
+    Bits::<N>::new_wrapping(value)
 }
 
 /// Return true if the `i`-th bit of `b` is set.
@@ -68,12 +61,9 @@ where
 /// Returns `false` when `i >= N`, matching the "pad with zeros"
 /// convention needed for Booth-window extraction.
 #[must_use]
-pub const fn bit_at<const N: usize>(b: Bits<N>, i: usize) -> bool
-where
-    W<N>: BitWidth,
-{
+pub const fn bit_at<const N: usize>(b: Bits<N>, i: usize) -> bool {
     if i < N {
-        (b.raw() >> i) & 1 != 0
+        (b.to_u128() >> i) & 1 != 0
     } else {
         false
     }
@@ -82,7 +72,6 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use rhdl_bits::bits;
 
     #[test]
     fn mask_small_values() {
@@ -115,13 +104,13 @@ mod tests {
 
     #[test]
     fn to_u128_extracts_all_bits() {
-        assert_eq!(to_u128(bits::<8>(0xAB)), 0xAB);
-        assert_eq!(to_u128(bits::<17>(0x1_FFFF)), 0x1_FFFF);
+        assert_eq!(to_u128(Bits::<8>::new_wrapping(0xAB)), 0xAB);
+        assert_eq!(to_u128(Bits::<17>::new_wrapping(0x1_FFFF)), 0x1_FFFF);
     }
 
     #[test]
     fn bit_at_reads_individual_bits() {
-        let b = bits::<8>(0b1010_0101);
+        let b = Bits::<8>::new_wrapping(0b1010_0101);
         assert!(bit_at(b, 0));
         assert!(!bit_at(b, 1));
         assert!(bit_at(b, 2));
@@ -132,7 +121,7 @@ mod tests {
 
     #[test]
     fn bit_at_past_width_returns_false() {
-        let b = bits::<8>(0xFF);
+        let b = Bits::<8>::new_wrapping(0xFF);
         assert!(!bit_at(b, 8));
         assert!(!bit_at(b, 100));
     }

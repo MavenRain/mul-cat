@@ -5,7 +5,7 @@
 // patterns make the Booth window decode table clearer.
 #![allow(clippy::tuple_array_conversions)]
 
-//! Multiplier built on comp-cat-rs and RHDL.
+//! Multiplier built on comp-cat-rs and hdl-cat.
 //!
 //! This crate implements radix-4 Booth-encoded multipliers with
 //! configurable carry-save tree reductions (Wallace, linear, etc.)
@@ -15,7 +15,7 @@
 //! [`interpret`](comp_cat_rs::collapse::free_category::interpret)
 //! function composes reduction descriptors along the path.
 //!
-//! Hardware bit types are provided by [`rhdl_bits`] (`Bits<N>`).
+//! Hardware bit types are provided by [`hdl_cat_bits`] (`Bits<N>`).
 //!
 //! # Architecture
 //!
@@ -33,9 +33,9 @@
 //! ```
 //! use mul_cat::evaluate::mul::booth_multiply;
 //! use mul_cat::topology::wallace::Wallace;
-//! use rhdl_bits::bits;
+//! use hdl_cat_bits::Bits;
 //!
-//! let product = booth_multiply::<17>(bits::<17>(12345), bits::<17>(6789), &Wallace)
+//! let product = booth_multiply::<17>(Bits::<17>::new_wrapping(12345), Bits::<17>::new_wrapping(6789), &Wallace)
 //!     .map(|r| r.to_wide_value())
 //!     .ok();
 //! assert_eq!(product, Some(12345_u128 * 6789));
@@ -52,6 +52,7 @@
 pub mod bits_ext;
 pub mod booth;
 pub mod carry_save;
+pub mod circuit;
 pub mod error;
 pub mod evaluate;
 pub mod graph;

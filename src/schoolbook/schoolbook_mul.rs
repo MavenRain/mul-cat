@@ -6,7 +6,7 @@ use crate::error::Error;
 use crate::evaluate::tree_stage::reduce_terms;
 use crate::schoolbook::grid::{assemble_columns, element_products};
 use crate::topology::Topology;
-use rhdl_bits::{BitWidth, Bits, W};
+use hdl_cat_bits::Bits;
 
 /// Result of a schoolbook multiplication: one carry-save pair per
 /// output column, resolvable against the column bit width.
@@ -60,10 +60,10 @@ impl SchoolbookResult {
 /// ```
 /// use mul_cat::schoolbook::schoolbook_mul::schoolbook_multiply;
 /// use mul_cat::topology::wallace::Wallace;
-/// use rhdl_bits::bits;
+/// use hdl_cat_bits::Bits;
 ///
-/// let a = [bits::<8>(3), bits::<8>(1), bits::<8>(4)];
-/// let b = [bits::<8>(2), bits::<8>(7), bits::<8>(1)];
+/// let a = [Bits::<8>::new_wrapping(3), Bits::<8>::new_wrapping(1), Bits::<8>::new_wrapping(4)];
+/// let b = [Bits::<8>::new_wrapping(2), Bits::<8>::new_wrapping(7), Bits::<8>::new_wrapping(1)];
 /// let column_count = schoolbook_multiply::<8>(&a, &b, 4, &Wallace)
 ///     .map(|r| r.columns().len())
 ///     .ok();
@@ -74,10 +74,7 @@ pub fn schoolbook_multiply<const N: usize>(
     b: &[Bits<N>],
     word_len: usize,
     topology: &impl Topology,
-) -> Result<SchoolbookResult, Error>
-where
-    W<N>: BitWidth,
-{
+) -> Result<SchoolbookResult, Error> {
     validate_dimensions::<N>(a, b, word_len)?;
     let a_vals: Vec<u128> = a.iter().copied().map(to_u128).collect();
     let b_vals: Vec<u128> = b.iter().copied().map(to_u128).collect();
@@ -98,10 +95,7 @@ fn validate_dimensions<const N: usize>(
     a: &[impl Sized],
     b: &[impl Sized],
     word_len: usize,
-) -> Result<(), Error>
-where
-    W<N>: BitWidth,
-{
+) -> Result<(), Error> {
     if N == 0 {
         Err(Error::ZeroBitWidth)?;
     }
@@ -132,7 +126,6 @@ mod tests {
     use super::*;
     use crate::topology::wallace::Wallace;
     use proptest::prelude::*;
-    use rhdl_bits::bits;
 
     /// Evaluate the polynomial with coefficients `coeffs` at `base`.
     fn eval_at_base(coeffs: &[u128], base: u128) -> u128 {
@@ -153,8 +146,8 @@ mod tests {
 
     #[test]
     fn schoolbook_preserves_polynomial_value_at_base() -> Result<(), Error> {
-        let a = [bits::<8>(3), bits::<8>(1), bits::<8>(4)];
-        let b = [bits::<8>(2), bits::<8>(7), bits::<8>(1)];
+        let a = [Bits::<8>::new_wrapping(3), Bits::<8>::new_wrapping(1), Bits::<8>::new_wrapping(4)];
+        let b = [Bits::<8>::new_wrapping(2), Bits::<8>::new_wrapping(7), Bits::<8>::new_wrapping(1)];
         let word_len = 4;
         let base: u128 = 1 << word_len;
         let result = schoolbook_multiply::<8>(&a, &b, word_len, &Wallace)?;
@@ -169,8 +162,8 @@ mod tests {
 
     #[test]
     fn schoolbook_rejects_mismatched_lengths() {
-        let a = [bits::<8>(1), bits::<8>(2)];
-        let b = [bits::<8>(3), bits::<8>(4), bits::<8>(5)];
+        let a = [Bits::<8>::new_wrapping(1), Bits::<8>::new_wrapping(2)];
+        let b = [Bits::<8>::new_wrapping(3), Bits::<8>::new_wrapping(4), Bits::<8>::new_wrapping(5)];
         assert!(schoolbook_multiply::<8>(&a, &b, 4, &Wallace).is_err());
     }
 
@@ -183,8 +176,8 @@ mod tests {
 
     #[test]
     fn schoolbook_rejects_oversize_word_len() {
-        let a = [bits::<8>(1)];
-        let b = [bits::<8>(2)];
+        let a = [Bits::<8>::new_wrapping(1)];
+        let b = [Bits::<8>::new_wrapping(2)];
         assert!(schoolbook_multiply::<8>(&a, &b, 16, &Wallace).is_err());
     }
 
@@ -197,8 +190,8 @@ mod tests {
             let k = a.len().min(b_seed.len());
             let a = &a[..k];
             let b = &b_seed[..k];
-            let a_bits: Vec<Bits<8>> = a.iter().map(|v| bits::<8>(*v)).collect();
-            let b_bits: Vec<Bits<8>> = b.iter().map(|v| bits::<8>(*v)).collect();
+            let a_bits: Vec<Bits<8>> = a.iter().map(|v| Bits::<8>::new_wrapping(*v)).collect();
+            let b_bits: Vec<Bits<8>> = b.iter().map(|v| Bits::<8>::new_wrapping(*v)).collect();
             let word_len = 4;
             let base: u128 = 1 << word_len;
             let result = schoolbook_multiply::<8>(&a_bits, &b_bits, word_len, &Wallace).ok();

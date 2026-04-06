@@ -199,6 +199,7 @@ impl ReductionDescriptor {
                     available,
                 },
                 Error::Graph(_)
+                | Error::HdlCat(_)
                 | Error::LevelOutOfBounds { .. }
                 | Error::GroupingMismatch { .. }
                 | Error::ZeroBitWidth

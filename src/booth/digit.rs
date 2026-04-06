@@ -7,7 +7,7 @@
 //! according to the standard Booth table.
 
 use crate::bits_ext::bit_at;
-use rhdl_bits::{BitWidth, Bits, W};
+use hdl_cat_bits::Bits;
 
 /// A signed radix-4 Booth digit.
 ///
@@ -72,10 +72,7 @@ pub const fn digit_count(n: usize) -> usize {
 /// Bit positions outside `[0, N)` are treated as zero.  The "low"
 /// bit for digit 0 is the implicit position `-1` (always zero).
 #[must_use]
-pub fn window<const N: usize>(b: Bits<N>, digit_index: usize) -> [bool; 3]
-where
-    W<N>: BitWidth,
-{
+pub fn window<const N: usize>(b: Bits<N>, digit_index: usize) -> [bool; 3] {
     let mid_pos = 2 * digit_index;
     let high = bit_at(b, mid_pos + 1);
     let mid = bit_at(b, mid_pos);
@@ -93,16 +90,13 @@ where
 ///
 /// ```
 /// use mul_cat::booth::digit::{encode_all, BoothDigit};
-/// use rhdl_bits::bits;
+/// use hdl_cat_bits::Bits;
 ///
-/// let digits = encode_all(bits::<4>(0b1010));
+/// let digits = encode_all(Bits::<4>::new_wrapping(0b1010));
 /// assert_eq!(digits, vec![BoothDigit::MinusTwo, BoothDigit::MinusOne, BoothDigit::PlusOne]);
 /// ```
 #[must_use]
-pub fn encode_all<const N: usize>(b: Bits<N>) -> Vec<BoothDigit>
-where
-    W<N>: BitWidth,
-{
+pub fn encode_all<const N: usize>(b: Bits<N>) -> Vec<BoothDigit> {
     (0..digit_count(N))
         .map(|i| BoothDigit::from_window(window(b, i)))
         .collect()
@@ -111,7 +105,6 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use rhdl_bits::bits;
 
     #[test]
     fn digit_count_matches_supranational_17_bit() {
@@ -129,7 +122,7 @@ mod tests {
 
     #[test]
     fn window_zero_uses_implicit_zero_below() {
-        let b = bits::<4>(0b1011);
+        let b = Bits::<4>::new_wrapping(0b1011);
         let w = window(b, 0);
         // high = bit 1 = 1, mid = bit 0 = 1, low = 0 (implicit, position -1)
         assert_eq!(w, [true, true, false]);
@@ -137,7 +130,7 @@ mod tests {
 
     #[test]
     fn window_beyond_msb_reads_zeros() {
-        let b = bits::<4>(0b1000);
+        let b = Bits::<4>::new_wrapping(0b1000);
         let w = window(b, 2);
         assert_eq!(w, [false, false, true]);
     }
@@ -161,7 +154,7 @@ mod tests {
 
     #[test]
     fn encode_all_produces_expected_count() {
-        let b = bits::<17>(12345);
+        let b = Bits::<17>::new_wrapping(12345);
         assert_eq!(encode_all(b).len(), 9);
     }
 }
